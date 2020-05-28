@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+    my-postgres-server:
+        image: 'postgres'
+        environment: 
+            - POSTGRES_PASSWORD=${PGPASSWORD}
+
+    my-redis-server:
+        image: 'redis'
+
+    nginx:
+        restart: always
+        build: 
+            dockerfile: Dockerfile.dev
+            context: ./nginx
+        ports: 
+            - '80:80'
+        depends_on:
+            - backend
+            - frontend 
+
+    backend:
+        build: 
+            dockerfile: Dockerfile.dev
+            context: ./backend
+        volumes:
+            - /opt/app/node_modules
+            - ./backend:/opt/app
+        depends_on: 
+            - my-postgres-server
+            - my-redis-server
+
+        environment: 
+            - REDIS_HOST=${REDIS_HOST}
+            - REDIS_PORT=${REDIS_PORT}
+            - PGUSER=${PGUSER}
+            - PGHOST=${PGHOST}
+            - PGDATABASE=${PGDATABASE}
+            - PGPASSWORD=${PGPASSWORD}
+            - PGPORT=${PGPORT}
+        
+
+    frontend:
+        build: 
+            dockerfile: Dockerfile.dev
+            context: ./frontend
+        volumes:
+            - /opt/app/node_modules
+            - ./frontend:/opt/app
+        depends_on: 
+            - backend
+        tty: true
+
+
